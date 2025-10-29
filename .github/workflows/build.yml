@@ -13,11 +13,13 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: "npm"
       - name: Install dependencies
         run: |
-          cd server
+          cd ./server
           npm ci
+
+
+
 
   docker-build:
     runs-on: ubuntu-latest
