@@ -1,0 +1,50 @@
+name: BuildApi
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: "npm"
+      - name: Install dependencies
+        run: |
+          cd server
+          npm ci
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: building docker image
+        run: docker build -t blogapp:latest ./server
+      - name: enregistré docker image crée
+        run: docker save blogapp:latest -o blogapp.tar
+      - uses: actions/upload-artifact@v5
+        with:
+          name: blogapp
+          path: blogapp.tar
+
+  docker-push:
+    needs: docker-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v5
+        with:
+          name: blogapp
+      - name: telecharger docker image
+        run: docker load -i blogapp.tar
+      - name: login docker
+        run: echo "${{ secrets.DOCKER_TOKEN }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+      - name: push image vers le tag
+        run: |
+          docker tag blogapp:latest "${{ secrets.DOCKER_USERNAME }}"/blogapp:tagname
+          docker push "${{ secrets.DOCKER_USERNAME }}"/blogapp:tagname
